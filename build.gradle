@@ -1,0 +1,149 @@
+/*
+ * Copyright 2023 Aiven Oy
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+    // https://docs.gradle.org/current/userguide/java_library_plugin.html
+    id 'java-library'
+
+    // https://docs.gradle.org/current/userguide/checkstyle_plugin.html
+    id 'checkstyle'
+
+    // https://docs.gradle.org/current/userguide/distribution_plugin.html
+    id 'distribution'
+
+    // https://docs.gradle.org/current/userguide/publishing_maven.html
+    id 'maven-publish'
+
+    // https://docs.gradle.org/current/userguide/signing_plugin.html
+    id 'signing'
+}
+
+group = 'io.aiven'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+
+    withJavadocJar()
+    withSourcesJar()
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+dependencies {
+    implementation libs.testcontainers
+
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.jupiter.params
+    testRuntimeOnly libs.junit.jupiter.engine
+
+    testImplementation libs.testcontainers.junit.jupiter
+
+    testImplementation libs.gcs
+    testRuntimeOnly libs.slf4j.log4j12
+}
+
+distributions {
+    main {
+        contents {
+            from jar
+            from sourcesJar
+        }
+    }
+}
+
+javadoc {
+    options.addBooleanOption('html5', true)
+    // disable missing javadoc lint and show only warning and error messages
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
+}
+
+jar {
+    manifest {
+        attributes(
+                'Version': "${project.version}"
+        )
+    }
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = getGroup()
+            artifactId = "testcontainers-fake-gcs-server"
+            version = getVersion()
+
+            from components.java
+
+            pom {
+                name = "Testcontainers wrapper for fake-gcs-server"
+                description = "Testcontainers wrapper for fake-gcs-server"
+                url = "https://github.com/Aiven-Open/testcontainers-fake-gcs-server"
+                organization {
+                    name = "Aiven Oy"
+                    url = "https://aiven.io"
+                }
+
+                licenses {
+                    license {
+                        name = "Apache 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0"
+                        distribution = "repo"
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'aiven'
+                        name = 'Aiven Opensource'
+                        email = 'opensource@aiven.io'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com:Aiven-Open/testcontainers-fake-gcs-server.git'
+                    developerConnection = 'scm:git:ssh://github.com:Aiven-Open/testcontainers-fake-gcs-server.git'
+                    url = 'https://github.com/Aiven-Open/testcontainers-fake-gcs-server'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name="sonatype"
+
+            def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2"
+            def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots"
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+
+            credentials(PasswordCredentials)
+        }
+    }
+}
+
+signing {
+    def signingKey = findProperty("signingKey")
+    def signingPassword = findProperty("signingPassword")
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign publishing.publications.maven
+}
