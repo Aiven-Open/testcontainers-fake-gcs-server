@@ -21,17 +21,20 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Objects;
 
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
 public class FakeGcsServerContainer extends GenericContainer<FakeGcsServerContainer> {
-    private static final int PORT = 4443;
+    public static final int PORT = 4443;
 
     public static final String DEFAULT_VERSION = "1.47.4";
 
     public static final DockerImageName DEFAULT_IMAGE_NAME =
         DockerImageName.parse("fsouza/fake-gcs-server:" + DEFAULT_VERSION);
+
+    private String externalUrl = null;
 
     public FakeGcsServerContainer() {
         this(DEFAULT_IMAGE_NAME);
@@ -47,20 +50,37 @@ public class FakeGcsServerContainer extends GenericContainer<FakeGcsServerContai
         addExposedPorts(PORT);
     }
 
+    public FakeGcsServerContainer withExternalURL(final String externalUrl) {
+        this.externalUrl = externalUrl;
+        return this;
+    }
+
     @Override
     public void start() {
         super.start();
         updateExternalUrl();
     }
 
+    /**
+     * The URL based on the host name and mapped port.
+     */
     public String url() {
         return "http://" + getHost() + ":" + getMappedPort(PORT);
+    }
+
+    /**
+     * The URL based on the defined external URL.
+     *
+     * <p>Defaults to {@link FakeGcsServerContainer#url()}.
+     */
+    public String externalUrl() {
+        return Objects.requireNonNullElseGet(externalUrl, this::url);
     }
 
     private void updateExternalUrl() {
         final String modifyExternalUrlRequestUri = url() + "/_internal/config";
         final String updateExternalUrlJson = "{"
-            + "\"externalUrl\": \"" + url() + "\""
+            + "\"externalUrl\": \"" + externalUrl() + "\""
             + "}";
 
         final HttpRequest req = HttpRequest.newBuilder()
