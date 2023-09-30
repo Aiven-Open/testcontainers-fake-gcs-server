@@ -24,10 +24,13 @@ import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
 import org.junit.jupiter.api.Named;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.testcontainers.utility.DockerImageName;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class FakeGcsServerContainerTest {
     static final BucketInfo TEST_BUCKET = BucketInfo.of("test-bucket");
@@ -59,5 +62,22 @@ public class FakeGcsServerContainerTest {
                 (Supplier<FakeGcsServerContainer>) () ->
                     new FakeGcsServerContainer(DockerImageName.parse("fsouza/fake-gcs-server:1.47.3"))))
         );
+    }
+
+    @Test
+    void testExternalUrlNotSet() {
+        try (final var fakeGcsServerContainer = new FakeGcsServerContainer()) {
+            fakeGcsServerContainer.start();
+            assertThat(fakeGcsServerContainer.externalUrl()).isEqualTo(fakeGcsServerContainer.url());
+        }
+    }
+
+    @Test
+    void testExternalUrlSet() {
+        try (final var fakeGcsServerContainer = new FakeGcsServerContainer().withExternalURL("http://aaa:1234")) {
+            fakeGcsServerContainer.start();
+            assertThat(fakeGcsServerContainer.externalUrl()).isEqualTo("http://aaa:1234");
+            assertThat(fakeGcsServerContainer.externalUrl()).isNotEqualTo(fakeGcsServerContainer.url());
+        }
     }
 }

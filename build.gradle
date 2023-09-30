@@ -58,6 +58,8 @@ dependencies {
 
     testImplementation libs.testcontainers.junit.jupiter
 
+    testImplementation libs.assertj
+
     testImplementation libs.gcs
     testRuntimeOnly libs.slf4j.log4j12
 }
