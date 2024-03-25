@@ -16,10 +16,13 @@
 
 package io.aiven.testcontainers.fakegcsserver;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import com.google.cloud.NoCredentials;
+import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.BucketInfo;
 import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageOptions;
@@ -37,7 +40,7 @@ public class FakeGcsServerContainerTest {
 
     @ParameterizedTest
     @MethodSource("provideTestParams")
-    void test(final Supplier<FakeGcsServerContainer> fakeGcsServerContainerSupplier) {
+    void test(final Supplier<FakeGcsServerContainer> fakeGcsServerContainerSupplier) throws IOException {
         try (final FakeGcsServerContainer fakeGcsServerContainer = fakeGcsServerContainerSupplier.get()) {
             fakeGcsServerContainer.start();
 
@@ -49,6 +52,11 @@ public class FakeGcsServerContainerTest {
                 .getService();
 
             storage.create(TEST_BUCKET);
+
+            // Perform resumable upload to check that the external URL is configured correctly.
+            final BlobInfo blobInfo = BlobInfo.newBuilder(TEST_BUCKET, "blob").build();
+            final byte[] bytes = new byte[10 * 1024 * 1024];
+            storage.createFrom(blobInfo, new ByteArrayInputStream(bytes), 256  * 1024);
         }
     }
 

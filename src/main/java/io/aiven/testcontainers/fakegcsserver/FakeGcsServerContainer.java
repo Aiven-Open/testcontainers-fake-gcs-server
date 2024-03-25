@@ -23,6 +23,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
 
+import com.github.dockerjava.api.command.InspectContainerResponse;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -56,8 +57,8 @@ public class FakeGcsServerContainer extends GenericContainer<FakeGcsServerContai
     }
 
     @Override
-    public void start() {
-        super.start();
+    protected void containerIsStarted(final InspectContainerResponse containerInfo) {
+        super.containerIsStarted(containerInfo);
         updateExternalUrl();
     }
 
