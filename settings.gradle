@@ -30,7 +30,7 @@ dependencyResolutionManagement {
 
             library('assertj', 'org.assertj:assertj-core:3.27.7')
 
-            library('slf4j-log4j12', 'org.slf4j:slf4j-log4j12:2.0.17')
+            library('slf4j-log4j12', 'org.slf4j:slf4j-log4j12:2.0.18')
 
             library('gcs', 'com.google.cloud:google-cloud-storage:2.67.0')
         }
